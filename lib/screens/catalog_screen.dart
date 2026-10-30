@@ -1,36 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
-import '../repositories/product_repository.dart';
-import '../repositories/product_repository_impl.dart';
+import '../providers/pos_provider.dart';
 import 'item_detail_screen.dart';
 import 'cart_screen.dart';
 import 'history_screen.dart';
 
 class CatalogScreen extends StatefulWidget {
-  final ProductRepository? repository;
-
-  const CatalogScreen({super.key, this.repository});
+  const CatalogScreen({super.key});
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
 }
 
 class _CatalogScreenState extends State<CatalogScreen> {
-  late final ProductRepository productRepo;
-  final List<CartItem> cart = [];
-  List<Product> products = [];
-  bool isLoading = true;
-  bool isFromCache = false;
-  String? statusMessage;
-
   String selectedCategory = 'Semua';
   String searchQuery = '';
   final TextEditingController searchController = TextEditingController();
 
   List<String> get categories => ['Semua', 'Makanan', 'Minuman', 'Camilan'];
 
-  List<Product> get filteredProducts {
+  List<Product> getFilteredProducts(List<Product> products) {
     return products.where((p) {
       final matchCategory =
           selectedCategory == 'Semua' || p.category == selectedCategory;
@@ -38,68 +29,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
           p.name.toLowerCase().contains(searchQuery.toLowerCase());
       return matchCategory && matchSearch;
     }).toList();
-  }
-
-  int get totalCartCount => cart.fold(0, (sum, item) => sum + item.quantity);
-  int get totalCartPrice => cart.fold(0, (sum, item) => sum + item.subtotal);
-
-  @override
-  void initState() {
-    super.initState();
-    productRepo = widget.repository ?? ProductRepositoryImpl();
-    loadProducts();
-  }
-
-  Future<void> loadProducts({bool forceRefresh = false}) async {
-    setState(() {
-      isLoading = true;
-    });
-
-    final result = await productRepo.fetchProducts(forceRefresh: forceRefresh);
-
-    if (!mounted) return;
-
-    setState(() {
-      products = result.products;
-      isFromCache = result.isFromCache;
-      statusMessage = result.errorMessage;
-      isLoading = false;
-    });
-
-    if (result.errorMessage != null) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.errorMessage!),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  void addToCart(Product product, {int quantity = 1, String notes = ''}) {
-    setState(() {
-      final index = cart.indexWhere(
-        (item) => item.product.id == product.id && item.notes == notes,
-      );
-      if (index >= 0) {
-        cart[index].quantity += quantity;
-      } else {
-        cart.add(CartItem(
-          product: product,
-          quantity: quantity,
-          notes: notes,
-        ));
-      }
-    });
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} dimasukkan ke keranjang'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
   }
 
   void openDetail(Product product) async {
@@ -110,8 +39,19 @@ class _CatalogScreenState extends State<CatalogScreen> {
       ),
     );
 
-    if (result != null) {
-      addToCart(result.product, quantity: result.quantity, notes: result.notes);
+    if (result != null && mounted) {
+      context.read<PosProvider>().addToCart(
+            result.product,
+            quantity: result.quantity,
+            notes: result.notes,
+          );
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} dimasukkan ke keranjang'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
     }
   }
 
@@ -119,18 +59,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CartScreen(
-          cartItems: cart,
-          onClearCart: () {
-            setState(() {
-              cart.clear();
-            });
-          },
-        ),
+        builder: (context) => const CartScreen(),
       ),
-    ).then((_) {
-      setState(() {});
-    });
+    );
   }
 
   IconData getProductIcon(String iconName) {
@@ -166,6 +97,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pos = context.watch<PosProvider>();
+    final filtered = getFilteredProducts(pos.products);
 
     return Scaffold(
       appBar: AppBar(
@@ -183,7 +116,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           IconButton(
             tooltip: 'Segarkan Data Server',
             icon: const Icon(Icons.sync),
-            onPressed: () => loadProducts(forceRefresh: true),
+            onPressed: () => pos.loadProducts(forceRefresh: true),
           ),
           IconButton(
             tooltip: 'Riwayat Transaksi',
@@ -204,23 +137,29 @@ class _CatalogScreenState extends State<CatalogScreen> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: isFromCache ? Colors.amber.shade100 : Colors.teal.shade50,
+              color: pos.isOffline
+                  ? Colors.amber.shade100
+                  : Colors.teal.shade50,
               child: Row(
                 children: [
                   Icon(
-                    isFromCache ? Icons.cloud_off : Icons.cloud_done,
+                    pos.isOffline ? Icons.cloud_off : Icons.cloud_done,
                     size: 16,
-                    color: isFromCache ? Colors.amber.shade900 : Colors.teal.shade800,
+                    color: pos.isOffline
+                        ? Colors.amber.shade900
+                        : Colors.teal.shade800,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isFromCache
+                    pos.isOffline
                         ? 'Mode Offline: Memakai data tersimpan di perangkat'
                         : 'Mode Online: Terhubung dengan server REST API',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isFromCache ? Colors.amber.shade900 : Colors.teal.shade800,
+                      color: pos.isOffline
+                          ? Colors.amber.shade900
+                          : Colors.teal.shade800,
                     ),
                   ),
                 ],
@@ -282,10 +221,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: isLoading
+              child: pos.isLoadingProducts
                   ? const Center(child: CircularProgressIndicator())
                   : RefreshIndicator(
-                      onRefresh: () => loadProducts(forceRefresh: true),
+                      onRefresh: () => pos.loadProducts(forceRefresh: true),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           int crossAxisCount = 2;
@@ -304,7 +243,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             }
                           }
 
-                          if (filteredProducts.isEmpty) {
+                          if (filtered.isEmpty) {
                             return const Center(
                               child: Text(
                                 'Tidak ada menu yang sesuai kriteria.',
@@ -322,9 +261,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               mainAxisSpacing: 12,
                               childAspectRatio: childAspectRatio,
                             ),
-                            itemCount: filteredProducts.length,
+                            itemCount: filtered.length,
                             itemBuilder: (context, index) {
-                              final product = filteredProducts[index];
+                              final product = filtered[index];
                               return Card(
                                 clipBehavior: Clip.antiAlias,
                                 shape: RoundedRectangleBorder(
@@ -398,8 +337,25 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                                     minHeight: 32,
                                                   ),
                                                   icon: const Icon(Icons.add),
-                                                  onPressed: () =>
-                                                      addToCart(product),
+                                                  onPressed: () {
+                                                    pos.addToCart(product);
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .hideCurrentSnackBar();
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          '${product.name} dimasukkan ke keranjang',
+                                                        ),
+                                                        duration:
+                                                            const Duration(
+                                                          seconds: 1,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                               ],
                                             ),
@@ -416,7 +372,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       ),
                     ),
             ),
-            if (cart.isNotEmpty)
+            if (pos.totalCartCount > 0)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -435,7 +391,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 child: Row(
                   children: [
                     Badge(
-                      label: Text('$totalCartCount'),
+                      label: Text('${pos.totalCartCount}'),
                       child: const Icon(Icons.shopping_basket),
                     ),
                     const SizedBox(width: 14),
@@ -448,7 +404,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         Text(
-                          'Rp $totalCartPrice',
+                          'Rp ${pos.totalCartPrice}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

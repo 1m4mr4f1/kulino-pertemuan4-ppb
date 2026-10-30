@@ -1,47 +1,31 @@
 import 'package:flutter/material.dart';
-import '../models/cart_item.dart';
-import '../models/transaction_record.dart';
-import '../repositories/transaction_repository.dart';
-import '../repositories/transaction_repository_impl.dart';
+import 'package:provider/provider.dart';
+import '../providers/pos_provider.dart';
 import 'receipt_screen.dart';
 
 class CartScreen extends StatefulWidget {
-  final List<CartItem> cartItems;
-  final VoidCallback onClearCart;
-  final TransactionRepository? transactionRepository;
-
-  const CartScreen({
-    super.key,
-    required this.cartItems,
-    required this.onClearCart,
-    this.transactionRepository,
-  });
+  const CartScreen({super.key});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
 }
 
 class _CartScreenState extends State<CartScreen> {
-  late final TransactionRepository transactionRepo;
   String selectedPaymentMethod = 'Tunai';
   final TextEditingController cashController = TextEditingController();
   int paidAmount = 0;
+  bool isProcessing = false;
 
-  int get totalAmount {
-    return widget.cartItems.fold(0, (sum, item) => sum + item.subtotal);
-  }
-
-  int get changeAmount {
+  int calculateChange(int total) {
     if (selectedPaymentMethod == 'QRIS') {
       return 0;
     }
-    return (paidAmount >= totalAmount) ? (paidAmount - totalAmount) : 0;
+    return (paidAmount >= total) ? (paidAmount - total) : 0;
   }
 
   @override
   void initState() {
     super.initState();
-    transactionRepo = widget.transactionRepository ?? TransactionRepositoryImpl();
     cashController.addListener(() {
       final val = int.tryParse(cashController.text.replaceAll('.', '')) ?? 0;
       setState(() {
@@ -56,17 +40,18 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
-  Future<void> processPayment() async {
-    if (widget.cartItems.isEmpty) {
+  Future<void> handleCheckout(PosProvider pos) async {
+    if (pos.cart.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Keranjang masih kosong')),
       );
       return;
     }
 
-    final finalPaid = selectedPaymentMethod == 'QRIS' ? totalAmount : paidAmount;
+    final total = pos.totalCartPrice;
+    final finalPaid = selectedPaymentMethod == 'QRIS' ? total : paidAmount;
 
-    if (selectedPaymentMethod == 'Tunai' && finalPaid < totalAmount) {
+    if (selectedPaymentMethod == 'Tunai' && finalPaid < total) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Uang pembayaran kurang dari total tagihan'),
@@ -75,18 +60,14 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    final transaction = TransactionRecord(
-      id: 'TRX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
-      timestamp: DateTime.now(),
-      items: List.from(widget.cartItems),
-      totalAmount: totalAmount,
+    setState(() {
+      isProcessing = true;
+    });
+
+    final transaction = await pos.processCheckout(
       paidAmount: finalPaid,
-      changeAmount: selectedPaymentMethod == 'QRIS' ? 0 : (finalPaid - totalAmount),
       paymentMethod: selectedPaymentMethod,
     );
-
-    await transactionRepo.saveTransaction(transaction);
-    widget.onClearCart();
 
     if (!mounted) return;
 
@@ -101,8 +82,9 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final pos = context.watch<PosProvider>();
 
-    if (widget.cartItems.isEmpty) {
+    if (pos.cart.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Keranjang Pesanan')),
         body: Center(
@@ -137,11 +119,7 @@ class _CartScreenState extends State<CartScreen> {
           IconButton(
             tooltip: 'Kosongkan Keranjang',
             icon: const Icon(Icons.delete_sweep_outlined),
-            onPressed: () {
-              setState(() {
-                widget.onClearCart();
-              });
-            },
+            onPressed: () => pos.clearCart(),
           ),
         ],
       ),
@@ -154,14 +132,14 @@ class _CartScreenState extends State<CartScreen> {
                 children: [
                   Expanded(
                     flex: 3,
-                    child: buildItemList(),
+                    child: buildItemList(pos),
                   ),
                   const VerticalDivider(width: 1),
                   Expanded(
                     flex: 2,
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20.0),
-                      child: buildPaymentSection(theme),
+                      child: buildPaymentSection(theme, pos),
                     ),
                   ),
                 ],
@@ -170,7 +148,7 @@ class _CartScreenState extends State<CartScreen> {
 
             return Column(
               children: [
-                Expanded(child: buildItemList()),
+                Expanded(child: buildItemList(pos)),
                 Container(
                   padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
@@ -183,7 +161,7 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ],
                   ),
-                  child: buildPaymentSection(theme),
+                  child: buildPaymentSection(theme, pos),
                 ),
               ],
             );
@@ -193,13 +171,13 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget buildItemList() {
+  Widget buildItemList(PosProvider pos) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: widget.cartItems.length,
+      itemCount: pos.cart.length,
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
-        final item = widget.cartItems[index];
+        final item = pos.cart[index];
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -236,13 +214,7 @@ class _CartScreenState extends State<CartScreen> {
                   icon: const Icon(Icons.remove_circle_outline),
                   color: Colors.red.shade400,
                   onPressed: () {
-                    setState(() {
-                      if (item.quantity > 1) {
-                        item.quantity--;
-                      } else {
-                        widget.cartItems.removeAt(index);
-                      }
-                    });
+                    pos.updateQuantity(index, item.quantity - 1);
                   },
                 ),
                 Text(
@@ -253,9 +225,7 @@ class _CartScreenState extends State<CartScreen> {
                   icon: const Icon(Icons.add_circle_outline),
                   color: Colors.green.shade600,
                   onPressed: () {
-                    setState(() {
-                      item.quantity++;
-                    });
+                    pos.updateQuantity(index, item.quantity + 1);
                   },
                 ),
               ],
@@ -274,7 +244,10 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget buildPaymentSection(ThemeData theme) {
+  Widget buildPaymentSection(ThemeData theme, PosProvider pos) {
+    final total = pos.totalCartPrice;
+    final change = calculateChange(total);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -287,7 +260,7 @@ class _CartScreenState extends State<CartScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             Text(
-              'Rp $totalAmount',
+              'Rp $total',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -329,7 +302,7 @@ class _CartScreenState extends State<CartScreen> {
                 ActionChip(
                   label: const Text('Uang Pas'),
                   onPressed: () {
-                    cashController.text = totalAmount.toString();
+                    cashController.text = total.toString();
                   },
                 ),
                 const SizedBox(width: 6),
@@ -362,7 +335,7 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               const Text('Kembalian:'),
               Text(
-                'Rp $changeAmount',
+                'Rp $change',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
@@ -391,12 +364,23 @@ class _CartScreenState extends State<CartScreen> {
         ],
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: processPayment,
+          onPressed: isProcessing ? null : () => handleCheckout(pos),
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
-          icon: const Icon(Icons.check_circle_outline),
-          label: const Text('Proses Pembayaran'),
+          icon: isProcessing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.check_circle_outline),
+          label: Text(
+            isProcessing ? 'Memproses Transaksi...' : 'Proses Pembayaran',
+          ),
         ),
       ],
     );

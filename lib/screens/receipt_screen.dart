@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/transaction_record.dart';
 
 class ReceiptScreen extends StatelessWidget {
@@ -16,6 +17,22 @@ class ReceiptScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Struk Pembayaran'),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            tooltip: 'Salin No. Transaksi',
+            icon: const Icon(Icons.copy),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: transaction.id));
+              HapticFeedback.lightImpact();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Nomor transaksi disalin ke clipboard'),
+                  duration: Duration(seconds: 1),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -88,6 +105,23 @@ class ReceiptScreen extends StatelessWidget {
                               ),
                             ],
                           ),
+                          if (transaction.latitude != null &&
+                              transaction.longitude != null) ...[
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('GPS Hardware'),
+                                Text(
+                                  '${transaction.latitude!.toStringAsFixed(4)}, ${transaction.longitude!.toStringAsFixed(4)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const Divider(height: 32, thickness: 1.5),
                           const Text(
                             'Rincian Pesanan:',
@@ -193,6 +227,7 @@ class ReceiptScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       Navigator.popUntil(context, (route) => route.isFirst);
                     },
                     style: FilledButton.styleFrom(

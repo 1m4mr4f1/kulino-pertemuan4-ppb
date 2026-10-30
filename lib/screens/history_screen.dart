@@ -1,46 +1,25 @@
 import 'package:flutter/material.dart';
-import '../models/transaction_record.dart';
-import '../repositories/transaction_repository.dart';
-import '../repositories/transaction_repository_impl.dart';
+import 'package:provider/provider.dart';
+import '../providers/pos_provider.dart';
 import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  final TransactionRepository? repository;
-
-  const HistoryScreen({super.key, this.repository});
+  const HistoryScreen({super.key});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  late final TransactionRepository transactionRepo;
-  List<TransactionRecord> transactions = [];
-  bool isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    transactionRepo = widget.repository ?? TransactionRepositoryImpl();
-    loadTransactions();
-  }
-
-  Future<void> loadTransactions() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    final list = await transactionRepo.getTransactions();
-
-    if (!mounted) return;
-
-    setState(() {
-      transactions = list;
-      isLoading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PosProvider>().loadTransactions();
     });
   }
 
-  Future<void> clearHistory() async {
+  Future<void> clearHistory(PosProvider pos) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -62,13 +41,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
 
     if (confirmed == true) {
-      await transactionRepo.clearTransactions();
-      loadTransactions();
+      await pos.clearTransactions();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final pos = context.watch<PosProvider>();
+    final transactions = pos.transactions;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Transaksi'),
@@ -77,12 +58,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
             IconButton(
               tooltip: 'Hapus Riwayat',
               icon: const Icon(Icons.delete_outline),
-              onPressed: clearHistory,
+              onPressed: () => clearHistory(pos),
             ),
         ],
       ),
       body: SafeArea(
-        child: isLoading
+        child: pos.isLoadingTransactions
             ? const Center(child: CircularProgressIndicator())
             : transactions.isEmpty
                 ? Center(
@@ -132,9 +113,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               color: Colors.teal.shade700,
                             ),
                           ),
-                          title: Text(
-                            trx.id,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          title: Row(
+                            children: [
+                              Text(
+                                trx.id,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              if (trx.latitude != null) ...[
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.location_on,
+                                  size: 16,
+                                  color: Colors.red,
+                                ),
+                              ],
+                            ],
                           ),
                           subtitle: Text(
                             '$date • ${trx.items.length} item • ${trx.paymentMethod}',
