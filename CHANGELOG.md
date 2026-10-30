@@ -1,5 +1,27 @@
 # Changelog
 
+## [Gate-2] — Data (P10)
+
+**Tautan Video Demo:** [https://youtu.be/placeholder-gate2-warungpos](https://youtu.be/placeholder-gate2-warungpos)
+
+### 1. Jadi
+- Integrasi pengambilan data katalog menu secara daring melalui remote REST API endpoint menggunakan paket `http` dengan batasan timeout 4 detik.
+- Mekanisme penyimpanan lokal persisten (offline caching) menggunakan `shared_preferences` untuk menyimpan katalog menu dan riwayat transaksi.
+- Aplikasi tetap berfungsi 100% tanpa jaringan internet (offline-ready); secara otomatis fallback ke cache lokal saat koneksi terputus atau gagal tanpa crash.
+- Indikator status visual pada antarmuka pengguna (banner mode online vs mode offline) serta fitur Pull-to-Refresh / tombol sinkronisasi manual untuk memperbarui data dari server.
+- Kontrak data abstraction yang jelas melalui antarmuka `ProductRepository` dan `TransactionRepository` yang terpisah dari detail implementasi.
+- Seluruh riwayat transaksi kasir kini tersimpan secara permanen di storage perangkat dan dapat ditinjau atau dihapus kapan saja.
+
+### 2. Macet
+- Percobaan membuat sinkronisasi background worker otomatis dua arah saat perangkat beralih dari kondisi offline ke online belum berjalan stabil pada platform Linux desktop karena perbedaan implementasi plugin background execution platform interface. Dugaan penyebabnya adalah plugin background scheduler memerlukan service native Android (WorkManager) yang tidak tersedia di Linux desktop. Solusi sementara yang diterapkan adalah sinkronisasi on-demand via pull-to-refresh dan auto-retry pada saat aplikasi dimuat.
+
+### 3. Keputusan
+- Memilih strategi caching Cache-First with Network Refresh Fallback pada `ProductRepositoryImpl` serta memisahkan kontrak antarmuka repositori (`ProductRepository` dan `TransactionRepository`). Alternatif yang ditolak adalah Network-Only (yang menyebabkan aplikasi macet saat tidak ada sinyal) dan pemanggilan HTTP langsung di dalam method `StatefulWidget` (yang menyulitkan pengujian unit dan melanggar prinsip Single Responsibility).
+
+### 4. AI
+- Deklarasi Penggunaan AI: AI digunakan untuk merancang kontrak abstraksi data layer (Repository pattern), memformulasikan mekanisme penanganan error jaringan (`SocketException`, `TimeoutException`) secara terstruktur tanpa menelan exception mentah-mentah, serta menyusun skema serialisasi model JSON.
+- Analisis AI: AI sempat menyarankan penggunaan SQLite (`sqflite`) yang membutuhkan binding native C library untuk setiap platform. Setelah dianalisis, arsitektur data WarungPOS pada tahap ini berorientasi pada payload key-value dokumen JSON yang berukuran ringan. Penggunaan `shared_preferences` jauh lebih portabel di semua target platform (Android, iOS, Web, Linux Desktop) tanpa risiko kegagalan build native library driver SQLite, sekaligus mencukupi seluruh kebutuhan offline storage aplikasi.
+
 ## [Gate-1] — Fondasi (P07)
 
 **Tautan Video Demo:** [https://youtu.be/placeholder-gate1-warungpos](https://youtu.be/placeholder-gate1-warungpos)
