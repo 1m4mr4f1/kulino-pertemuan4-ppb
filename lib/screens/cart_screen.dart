@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
 import '../models/transaction_record.dart';
-import '../data/mock_data.dart';
+import '../repositories/transaction_repository.dart';
+import '../repositories/transaction_repository_impl.dart';
 import 'receipt_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final List<CartItem> cartItems;
   final VoidCallback onClearCart;
+  final TransactionRepository? transactionRepository;
 
   const CartScreen({
     super.key,
     required this.cartItems,
     required this.onClearCart,
+    this.transactionRepository,
   });
 
   @override
@@ -19,6 +22,7 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  late final TransactionRepository transactionRepo;
   String selectedPaymentMethod = 'Tunai';
   final TextEditingController cashController = TextEditingController();
   int paidAmount = 0;
@@ -37,6 +41,7 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
+    transactionRepo = widget.transactionRepository ?? TransactionRepositoryImpl();
     cashController.addListener(() {
       final val = int.tryParse(cashController.text.replaceAll('.', '')) ?? 0;
       setState(() {
@@ -51,7 +56,7 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
-  void processPayment() {
+  Future<void> processPayment() async {
     if (widget.cartItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Keranjang masih kosong')),
@@ -80,8 +85,10 @@ class _CartScreenState extends State<CartScreen> {
       paymentMethod: selectedPaymentMethod,
     );
 
-    MockData.transactions.add(transaction);
+    await transactionRepo.saveTransaction(transaction);
     widget.onClearCart();
+
+    if (!mounted) return;
 
     Navigator.pushReplacement(
       context,

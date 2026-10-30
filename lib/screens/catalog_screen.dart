@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
-import '../data/mock_data.dart';
+import '../repositories/product_repository.dart';
+import '../repositories/product_repository_impl.dart';
 import 'item_detail_screen.dart';
 import 'cart_screen.dart';
 import 'history_screen.dart';
 
 class CatalogScreen extends StatefulWidget {
-  const CatalogScreen({super.key});
+  final ProductRepository? repository;
+
+  const CatalogScreen({super.key, this.repository});
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
 }
 
 class _CatalogScreenState extends State<CatalogScreen> {
+  late final ProductRepository productRepo;
   final List<CartItem> cart = [];
+  List<Product> products = [];
+  bool isLoading = true;
+  bool isFromCache = false;
+  String? statusMessage;
+
   String selectedCategory = 'Semua';
   String searchQuery = '';
   final TextEditingController searchController = TextEditingController();
@@ -22,7 +31,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   List<String> get categories => ['Semua', 'Makanan', 'Minuman', 'Camilan'];
 
   List<Product> get filteredProducts {
-    return MockData.products.where((p) {
+    return products.where((p) {
       final matchCategory =
           selectedCategory == 'Semua' || p.category == selectedCategory;
       final matchSearch =
@@ -33,6 +42,40 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   int get totalCartCount => cart.fold(0, (sum, item) => sum + item.quantity);
   int get totalCartPrice => cart.fold(0, (sum, item) => sum + item.subtotal);
+
+  @override
+  void initState() {
+    super.initState();
+    productRepo = widget.repository ?? ProductRepositoryImpl();
+    loadProducts();
+  }
+
+  Future<void> loadProducts({bool forceRefresh = false}) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final result = await productRepo.fetchProducts(forceRefresh: forceRefresh);
+
+    if (!mounted) return;
+
+    setState(() {
+      products = result.products;
+      isFromCache = result.isFromCache;
+      statusMessage = result.errorMessage;
+      isLoading = false;
+    });
+
+    if (result.errorMessage != null) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage!),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   void addToCart(Product product, {int quantity = 1, String notes = ''}) {
     setState(() {
@@ -138,6 +181,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Segarkan Data Server',
+            icon: const Icon(Icons.sync),
+            onPressed: () => loadProducts(forceRefresh: true),
+          ),
+          IconButton(
             tooltip: 'Riwayat Transaksi',
             icon: const Icon(Icons.history),
             onPressed: () {
@@ -154,6 +202,30 @@ class _CatalogScreenState extends State<CatalogScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              color: isFromCache ? Colors.amber.shade100 : Colors.teal.shade50,
+              child: Row(
+                children: [
+                  Icon(
+                    isFromCache ? Icons.cloud_off : Icons.cloud_done,
+                    size: 16,
+                    color: isFromCache ? Colors.amber.shade900 : Colors.teal.shade800,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isFromCache
+                        ? 'Mode Offline: Memakai data tersimpan di perangkat'
+                        : 'Mode Online: Terhubung dengan server REST API',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isFromCache ? Colors.amber.shade900 : Colors.teal.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: TextField(
@@ -210,126 +282,139 @@ class _CatalogScreenState extends State<CatalogScreen> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  int crossAxisCount = 2;
-                  double childAspectRatio = 0.82;
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: () => loadProducts(forceRefresh: true),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          int crossAxisCount = 2;
+                          double childAspectRatio = 0.82;
 
-                  if (constraints.maxWidth >= 960) {
-                    crossAxisCount = 4;
-                    childAspectRatio = 0.9;
-                  } else if (constraints.maxWidth >= 600) {
-                    crossAxisCount = 3;
-                    childAspectRatio = 0.85;
-                  } else {
-                    if (constraints.maxHeight < 450) {
-                      crossAxisCount = 3;
-                      childAspectRatio = 1.0;
-                    }
-                  }
+                          if (constraints.maxWidth >= 960) {
+                            crossAxisCount = 4;
+                            childAspectRatio = 0.9;
+                          } else if (constraints.maxWidth >= 600) {
+                            crossAxisCount = 3;
+                            childAspectRatio = 0.85;
+                          } else {
+                            if (constraints.maxHeight < 450) {
+                              crossAxisCount = 3;
+                              childAspectRatio = 1.0;
+                            }
+                          }
 
-                  if (filteredProducts.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Tidak ada menu yang sesuai kriteria.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
+                          if (filteredProducts.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'Tidak ada menu yang sesuai kriteria.',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            );
+                          }
 
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: childAspectRatio,
-                    ),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return Card(
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                        child: InkWell(
-                          onTap: () => openDetail(product),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  color: theme.colorScheme.primaryContainer
-                                      .withAlpha(50),
-                                  child: Center(
-                                    child: Icon(
-                                      getProductIcon(product.iconName),
-                                      size: 44,
-                                      color: theme.colorScheme.primary,
-                                    ),
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: childAspectRatio,
+                            ),
+                            itemCount: filteredProducts.length,
+                            itemBuilder: (context, index) {
+                              final product = filteredProducts[index];
+                              return Card(
+                                clipBehavior: Clip.antiAlias,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                                child: InkWell(
+                                  onTap: () => openDetail(product),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          color: theme
+                                              .colorScheme.primaryContainer
+                                              .withAlpha(50),
+                                          child: Center(
+                                            child: Icon(
+                                              getProductIcon(product.iconName),
+                                              size: 44,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(10.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              product.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              product.category,
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Rp ${product.price}',
+                                                  style: TextStyle(
+                                                    color: theme
+                                                        .colorScheme.primary,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 13,
+                                                  ),
+                                                ),
+                                                IconButton.filledTonal(
+                                                  iconSize: 18,
+                                                  padding: EdgeInsets.zero,
+                                                  constraints:
+                                                      const BoxConstraints(
+                                                    minWidth: 32,
+                                                    minHeight: 32,
+                                                  ),
+                                                  icon: const Icon(Icons.add),
+                                                  onPressed: () =>
+                                                      addToCart(product),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      product.category,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Rp ${product.price}',
-                                          style: TextStyle(
-                                            color: theme.colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        IconButton.filledTonal(
-                                          iconSize: 18,
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(
-                                            minWidth: 32,
-                                            minHeight: 32,
-                                          ),
-                                          icon: const Icon(Icons.add),
-                                          onPressed: () => addToCart(product),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
             ),
             if (cart.isNotEmpty)
               Container(
