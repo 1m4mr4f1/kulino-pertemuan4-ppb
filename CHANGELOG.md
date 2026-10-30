@@ -1,5 +1,25 @@
 # Changelog
 
+## [Gate-3] — Arsitektur & Kualitas (P13)
+
+**Tautan Video Demo:** [https://youtu.be/placeholder-gate3-warungpos](https://youtu.be/placeholder-gate3-warungpos)
+
+### 1. Jadi
+- Implementasi state management terpusat menggunakan `PosProvider` (berbasis `ChangeNotifierProvider`) yang mengonsolidasikan katalog produk, keranjang transaksi, proses checkout, dan riwayat pesanan tanpa prop-drilling.
+- Integrasi Fitur Perangkat 1: Sensor Haptic Feedback (`HapticFeedback` dari `flutter/services.dart`) yang memberikan getaran fisik nyata pada perangkat smartphone saat menambah pesanan, mengubah kuantitas, memproses checkout, dan menghapus riwayat.
+- Integrasi Fitur Perangkat 2: Sensor GPS / Geolocation Hardware (`geolocator`) yang mendeteksi koordinat lintang & bujur lokasi fisik kasir saat transaksi terjadi dan menampilkannya pada struk serta riwayat transaksi.
+- Rangkaian pengujian otomatis menyeluruh (`flutter test`) yang lulus 100% mencakup unit test state management `PosProvider`, test serialisasi/deserialisasi model data, dan widget test antarmuka.
+- Konsistensi arsitektur di seluruh layar (`CatalogScreen`, `ItemDetailScreen`, `CartScreen`, `ReceiptScreen`, `HistoryScreen`) yang kini terhubung secara reaktif ke state terpusat.
+
+### 2. Macet
+- Percobaan memperoleh akurasi GPS tinggi secara instan saat perangkat berada di dalam ruangan tertutup terkadang mengalami timeout signal. Hal ini diatasi dengan menambahkan konfigurasi batas waktu toleransi (timeout 3 detik) dan penanganan graceful fallback sehingga transaksi kasir tetap dapat diselesaikan dengan aman meski koordinat GPS sedang tidak terjangkau.
+
+### 3. Keputusan
+- Memilih `Provider` dan `ChangeNotifier` sebagai solusi state management terpusat aplikasi, bukan mempertahankan local state (`setState`) antarlayar dengan callback. Keputusan ini membuat aliran data satu arah menjadi konsisten, memisahkan logika bisnis dari rendering antarmuka, serta memudahkan pengujian otomatis.
+
+### 4. AI
+- Satu Saran AI Ditolak: AI sempat merekomendasikan penggunaan arsitektur BLoC (Business Logic Component) lengkap dengan stream, event, dan state class terpisah untuk setiap aksi kecil kasir (seperti `IncrementQtyEvent`, `DecrementQtyEvent`, `SelectCategoryEvent`). Saran ini ditolak karena untuk skala aplikasi WarungPOS, pola BLoC menghasilkan boilerplate berlebihan dan meningkatkan kompleksitas kognitif tanpa memberikan manfaat performa terukur dibandingkan `Provider` yang jauh lebih ringkas, modular, dan mudah dipahami saat sesi tanya jawab.
+
 ## [Gate-2] — Data (P10)
 
 **Tautan Video Demo:** [https://youtu.be/placeholder-gate2-warungpos](https://youtu.be/placeholder-gate2-warungpos)
