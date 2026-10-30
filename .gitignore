@@ -1,6 +1,10 @@
 # Miscellaneous
 dokumentasi_tugas.md
 *.class
+*.keystore
+*.jks
+key.properties
+android/key.properties
 *.log
 *.pyc
 *.swp

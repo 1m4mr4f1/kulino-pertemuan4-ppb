@@ -1,0 +1,4 @@
+storePassword=secret_password_here
+keyPassword=secret_password_here
+keyAlias=upload_key_alias
+storeFile=release-keystore.jks
