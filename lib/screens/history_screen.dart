@@ -82,7 +82,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppColors.primaryContainer,
                             shape: BoxShape.circle,
                           ),
@@ -136,80 +136,84 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                           ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(10),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            child: Icon(
-                              trx.paymentMethod == 'QRIS'
-                                  ? Icons.qr_code
-                                  : Icons.payments_outlined,
-                              color: AppColors.primary,
-                              size: 22,
-                            ),
-                          ),
-                          title: Row(
-                            children: [
-                              Text(
-                                trx.id,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryContainer,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              if (trx.latitude != null) ...[
-                                const SizedBox(width: 6),
-                                const Icon(
-                                  Icons.location_on,
-                                  size: 15,
-                                  color: AppColors.primary,
+                              child: Icon(
+                                trx.paymentMethod == 'QRIS'
+                                    ? Icons.qr_code
+                                    : Icons.payments_outlined,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  trx.id,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
+                                if (trx.latitude != null) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(
+                                    Icons.location_on,
+                                    size: 15,
+                                    color: AppColors.primary,
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
-                          subtitle: Text(
-                            '$date • ${trx.items.length} item • ${trx.paymentMethod}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
                             ),
-                          ),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Rp ${trx.totalAmount}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                              const Icon(
-                                Icons.chevron_right,
-                                size: 18,
+                            subtitle: Text(
+                              '$date • ${trx.items.length} item • ${trx.paymentMethod}',
+                              style: const TextStyle(
+                                fontSize: 12,
                                 color: AppColors.textSecondary,
                               ),
-                            ],
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Rp ${trx.totalAmount}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  size: 18,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ReceiptScreen(transaction: trx),
+                                ),
+                              );
+                            },
                           ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ReceiptScreen(transaction: trx),
-                              ),
-                            );
-                          },
                         ),
                       );
                     },

@@ -12,6 +12,7 @@ import '../repositories/transaction_repository_impl.dart';
 class PosProvider extends ChangeNotifier {
   final ProductRepository productRepository;
   final TransactionRepository transactionRepository;
+  final Future<Position?> Function()? locationProvider;
 
   List<Product> _products = [];
   bool _isLoadingProducts = false;
@@ -25,6 +26,7 @@ class PosProvider extends ChangeNotifier {
   PosProvider({
     ProductRepository? productRepository,
     TransactionRepository? transactionRepository,
+    this.locationProvider,
   })  : productRepository = productRepository ?? ProductRepositoryImpl(),
         transactionRepository =
             transactionRepository ?? TransactionRepositoryImpl();
@@ -119,6 +121,10 @@ class PosProvider extends ChangeNotifier {
   }
 
   Future<Position?> getCurrentDeviceLocation() async {
+    if (locationProvider != null) {
+      return await locationProvider!();
+    }
+
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -139,7 +145,7 @@ class PosProvider extends ChangeNotifier {
 
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          timeLimit: Duration(seconds: 3),
+          timeLimit: Duration(seconds: 2),
         ),
       );
     } catch (_) {

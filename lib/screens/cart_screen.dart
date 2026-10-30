@@ -93,7 +93,7 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppColors.primaryContainer,
                   shape: BoxShape.circle,
                 ),
@@ -145,7 +145,7 @@ class _CartScreenState extends State<CartScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 768;
+            final isWide = constraints.maxWidth >= 900;
             if (isWide) {
               return Row(
                 children: [
@@ -247,6 +247,7 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton.outlined(
                     style: IconButton.styleFrom(
@@ -260,7 +261,7 @@ class _CartScreenState extends State<CartScreen> {
                     },
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
                       '${item.quantity}',
                       style: const TextStyle(
@@ -283,9 +284,9 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ],
               ),
-              const SizedBox(width: 14),
-              SizedBox(
-                width: 75,
+              const SizedBox(width: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 65),
                 child: Text(
                   'Rp ${item.subtotal}',
                   textAlign: TextAlign.end,
@@ -314,20 +315,25 @@ class _CartScreenState extends State<CartScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Total Tagihan',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+            const Flexible(
+              child: Text(
+                'Total Tagihan',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
-            Text(
-              'Rp $total',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
+            Flexible(
+              child: Text(
+                'Rp $total',
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ],
@@ -415,19 +421,24 @@ class _CartScreenState extends State<CartScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Kembalian:',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
+              const Flexible(
+                child: Text(
+                  'Kembalian:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
-              Text(
-                'Rp $change',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
+              Flexible(
+                child: Text(
+                  'Rp $change',
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
