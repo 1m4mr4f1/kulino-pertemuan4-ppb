@@ -8,6 +8,8 @@ class TransactionRecord {
   final int paidAmount;
   final int changeAmount;
   final String paymentMethod;
+  final double? latitude;
+  final double? longitude;
 
   TransactionRecord({
     required this.id,
@@ -17,6 +19,8 @@ class TransactionRecord {
     required this.paidAmount,
     required this.changeAmount,
     required this.paymentMethod,
+    this.latitude,
+    this.longitude,
   });
 
   Map<String, dynamic> toJson() {
@@ -28,6 +32,8 @@ class TransactionRecord {
       'paidAmount': paidAmount,
       'changeAmount': changeAmount,
       'paymentMethod': paymentMethod,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -42,6 +48,8 @@ class TransactionRecord {
       paidAmount: json['paidAmount'] as int,
       changeAmount: json['changeAmount'] as int,
       paymentMethod: json['paymentMethod'] as String,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }

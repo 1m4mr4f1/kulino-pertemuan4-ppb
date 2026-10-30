@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/pos_provider.dart';
 import 'screens/catalog_screen.dart';
 
 void main() {
-  runApp(const WarungPosApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => PosProvider()..loadProducts(),
+      child: const WarungPosApp(),
+    ),
+  );
 }
 
 class WarungPosApp extends StatelessWidget {
