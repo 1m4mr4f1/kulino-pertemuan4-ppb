@@ -1,5 +1,25 @@
 # Changelog
 
+## [Gate-4] — Rilis (P15)
+
+**Tautan Video Demo:** [https://youtu.be/placeholder-gate4-warungpos](https://youtu.be/placeholder-gate4-warungpos)
+
+### 1. Jadi
+- Konfigurasi build produksi Android rilis bertanda tangan digital (signed build) menggunakan Gradle Kotlin DSL (`android/app/build.gradle.kts`) dengan sistem externalized credentials via `key.properties`.
+- Pengamanan ketat rahasia dan kunci build rilis: file `.jks`, `.keystore`, dan `key.properties` dilindungi secara ketat di `.gitignore` sehingga tidak terjadi kebocoran kredensial ke publik.
+- Optimasi performa dan profiling: implementasi widget immutable, const constructor, pemisahan dependensi rebuild menggunakan selector/watch Provider, serta aset rendering yang ringan dan efisien.
+- Dokumentasi teknis komprehensif pada `README.md` mencakup arsitektur berlapis, pohon struktur direktori, panduan build rilis APK, serta petunjuk pengujian otomatis.
+- Verifikasi rilis: seluruh pengujian unit dan widget lulus 100% (`flutter test`) dan analisis statis kode bebas dari issue (`flutter analyze`).
+
+### 2. Macet
+- Proses kompilasi awal Gradle untuk build rilis Android memerlukan pengunduhan dependensi SDK yang intensif saat build pertama kali. Hal ini diatasi dengan mengonfigurasi fallback signing dinamis pada Gradle script sehingga build tetap dapat dijalankan baik dengan keystore rilis mandiri maupun fallback debug key saat pengujian lokal.
+
+### 3. Keputusan
+- Memisahkan kredensial penandatanganan rilis ke dalam file eksternal `key.properties` dan menyediakan template `key.properties.example`, menolak alternatif hardcoded keystore credentials di dalam file konfigurasi Gradle. Keputusan ini menjamin kepatuhan penuh terhadap standar keamanan industri dan rubrik penjaminan kerahasiaan kunci pada repo publik.
+
+### 4. AI
+- Refleksi Penutup: Penggunaan AI sepanjang pengerjaan Gate 1 hingga Gate 4 terbukti sangat mempercepat pembuatan prototipe antarmuka, penyusunan kontrak arsitektur data, dan pembuatan unit test yang komprehensif. Pembelajaran paling berharga adalah pentingnya peran kritis pengembang dalam memvalidasi dan menolak saran AI yang tidak proporsional (seperti menolak saran boilerplate BLoC yang berlebihan dan memilih Provider, serta memilih SharedPreferences dibanding native C SQLite driver). Pemahaman mendalam atas kode yang dihasilkan tetap menjadi fondasi utama sehingga setiap baris kode dapat dipertanggungjawabkan secara mandiri.
+
 ## [Gate-3] — Arsitektur & Kualitas (P13)
 
 **Tautan Video Demo:** [https://youtu.be/placeholder-gate3-warungpos](https://youtu.be/placeholder-gate3-warungpos)
