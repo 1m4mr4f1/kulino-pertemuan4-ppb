@@ -1,5 +1,6 @@
 # Miscellaneous
 dokumentasi_tugas.md
+docs/
 *.class
 *.keystore
 *.jks

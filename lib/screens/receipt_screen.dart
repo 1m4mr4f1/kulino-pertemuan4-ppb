@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/transaction_record.dart';
+import '../theme/app_theme.dart';
 
 class ReceiptScreen extends StatelessWidget {
   final TransactionRecord transaction;
@@ -9,7 +10,6 @@ class ReceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final dateStr =
         '${transaction.timestamp.day.toString().padLeft(2, '0')}/${transaction.timestamp.month.toString().padLeft(2, '0')}/${transaction.timestamp.year} ${transaction.timestamp.hour.toString().padLeft(2, '0')}:${transaction.timestamp.minute.toString().padLeft(2, '0')}';
 
@@ -20,14 +20,18 @@ class ReceiptScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Salin No. Transaksi',
-            icon: const Icon(Icons.copy),
+            icon: const Icon(Icons.copy, size: 20),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: transaction.id));
               HapticFeedback.lightImpact();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Nomor transaksi disalin ke clipboard'),
-                  duration: Duration(seconds: 1),
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  content: const Text('Nomor transaksi disalin ke clipboard'),
+                  duration: const Duration(seconds: 1),
                 ),
               );
             },
@@ -39,202 +43,297 @@ class ReceiptScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20.0),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
                 children: [
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border, width: 1),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x080F172A),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: Colors.green.shade600,
-                            size: 64,
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.check,
+                              color: AppColors.primary,
+                              size: 32,
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          const Center(
-                            child: Text(
-                              'WARUNG MAKAN SEDERHANA',
+                        ),
+                        const SizedBox(height: 12),
+                        const Center(
+                          child: Text(
+                            'WARUNG MAKAN SEDERHANA',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Center(
+                          child: Text(
+                            'Jl. Kulino No. 4, Semarang',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'No. Transaksi',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              transaction.id,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1.1,
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
                               ),
-                            ),
-                          ),
-                          const Center(
-                            child: Text(
-                              'Jl. Kulino No. 4, Semarang',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Divider(thickness: 1.5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('No. Transaksi'),
-                              Text(
-                                transaction.id,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Waktu'),
-                              Text(dateStr),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Metode'),
-                              Text(
-                                transaction.paymentMethod,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          if (transaction.latitude != null &&
-                              transaction.longitude != null) ...[
-                            const SizedBox(height: 6),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('GPS Hardware'),
-                                Text(
-                                  '${transaction.latitude!.toStringAsFixed(4)}, ${transaction.longitude!.toStringAsFixed(4)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
-                          const Divider(height: 32, thickness: 1.5),
-                          const Text(
-                            'Rincian Pesanan:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          ...transaction.items.map((item) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          '${item.product.name} x${item.quantity}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        'Rp ${item.subtotal}',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (item.notes.isNotEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2.0),
-                                      child: Text(
-                                        'Catatan: ${item.notes}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontStyle: FontStyle.italic,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Waktu',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
                               ),
-                            );
-                          }),
-                          const Divider(height: 32, thickness: 1.5),
+                            ),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Metode',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              transaction.paymentMethod,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (transaction.latitude != null &&
+                            transaction.longitude != null) ...[
+                          const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'TOTAL',
+                                'GPS Hardware',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               Text(
-                                'Rp ${transaction.totalAmount}',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.primary,
+                                '${transaction.latitude!.toStringAsFixed(4)}, ${transaction.longitude!.toStringAsFixed(4)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Diterima'),
-                              Text('Rp ${transaction.paidAmount}'),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Kembalian'),
-                              Text(
-                                'Rp ${transaction.changeAmount}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          const Center(
-                            child: Text(
-                              'Terima kasih atas kunjungan Anda!',
-                              style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey,
-                              ),
-                            ),
                           ),
                         ],
-                      ),
+                        const SizedBox(height: 16),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Rincian Pesanan:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ...transaction.items.map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${item.product.name} x${item.quantity}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Rp ${item.subtotal}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (item.notes.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2.0),
+                                    child: Text(
+                                      'Catatan: ${item.notes}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontStyle: FontStyle.italic,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        const Divider(color: AppColors.border),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'TOTAL',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Rp ${transaction.totalAmount}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Diterima',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              'Rp ${transaction.paidAmount}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Kembalian',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              'Rp ${transaction.changeAmount}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Center(
+                          child: Text(
+                            'Terima kasih atas pesanan Anda!',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       Navigator.popUntil(context, (route) => route.isFirst);
                     },
                     style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: const Size(double.infinity, 48),
                     ),
-                    icon: const Icon(Icons.home),
-                    label: const Text('Selesai & Pesanan Baru'),
+                    icon: const Icon(Icons.home, size: 18),
+                    label: const Text('Kembali ke Katalog & Pesanan Baru'),
                   ),
                 ],
               ),

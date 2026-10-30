@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/pos_provider.dart';
+import '../theme/app_theme.dart';
 import 'receipt_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -81,7 +82,6 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final pos = context.watch<PosProvider>();
 
     if (pos.cart.isEmpty) {
@@ -91,20 +91,39 @@ class _CartScreenState extends State<CartScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.shopping_cart_outlined,
-                size: 72,
-                color: Colors.grey.shade400,
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 48,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Keranjang Belanja Kosong',
-                style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton(
+              const SizedBox(height: 6),
+              const Text(
+                'Pilih menu dari katalog untuk membuat pesanan.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Pilih Menu Sekarang'),
+                child: const Text('Buka Katalog Menu'),
               ),
             ],
           ),
@@ -126,7 +145,7 @@ class _CartScreenState extends State<CartScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 720;
+            final isWide = constraints.maxWidth >= 768;
             if (isWide) {
               return Row(
                 children: [
@@ -134,12 +153,12 @@ class _CartScreenState extends State<CartScreen> {
                     flex: 3,
                     child: buildItemList(pos),
                   ),
-                  const VerticalDivider(width: 1),
+                  const VerticalDivider(width: 1, color: AppColors.border),
                   Expanded(
                     flex: 2,
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.all(20.0),
-                      child: buildPaymentSection(theme, pos),
+                      child: buildPaymentSection(pos),
                     ),
                   ),
                 ],
@@ -151,17 +170,20 @@ class _CartScreenState extends State<CartScreen> {
                 Expanded(child: buildItemList(pos)),
                 Container(
                   padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: AppColors.border),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 8,
-                        offset: const Offset(0, -3),
+                        color: Color(0x0A0F172A),
+                        blurRadius: 10,
+                        offset: Offset(0, -3),
                       ),
                     ],
                   ),
-                  child: buildPaymentSection(theme, pos),
+                  child: buildPaymentSection(pos),
                 ),
               ],
             );
@@ -175,76 +197,113 @@ class _CartScreenState extends State<CartScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: pos.cart.length,
-      separatorBuilder: (context, index) => const Divider(),
+      separatorBuilder: (context, index) =>
+          const Divider(color: AppColors.borderSubtle, height: 16),
       itemBuilder: (context, index) {
         final item = pos.cart[index];
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.product.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    'Rp ${item.product.price} x ${item.quantity}',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                  if (item.notes.isNotEmpty)
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Catatan: ${item.notes}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange.shade800,
-                        fontStyle: FontStyle.italic,
+                      item.product.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Rp ${item.product.price} / porsi',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (item.notes.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          'Catatan: ${item.notes}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFD97706),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton.outlined(
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(36, 36),
+                      padding: EdgeInsets.zero,
+                      side: const BorderSide(color: AppColors.border),
+                    ),
+                    icon: const Icon(Icons.remove, size: 16),
+                    onPressed: () {
+                      pos.updateQuantity(index, item.quantity - 1);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      '${item.quantity}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      minimumSize: const Size(36, 36),
+                      padding: EdgeInsets.zero,
+                    ),
+                    icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                    onPressed: () {
+                      pos.updateQuantity(index, item.quantity + 1);
+                    },
+                  ),
                 ],
               ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  color: Colors.red.shade400,
-                  onPressed: () {
-                    pos.updateQuantity(index, item.quantity - 1);
-                  },
+              const SizedBox(width: 14),
+              SizedBox(
+                width: 75,
+                child: Text(
+                  'Rp ${item.subtotal}',
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: AppColors.primary,
+                  ),
                 ),
-                Text(
-                  '${item.quantity}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline),
-                  color: Colors.green.shade600,
-                  onPressed: () {
-                    pos.updateQuantity(index, item.quantity + 1);
-                  },
-                ),
-              ],
-            ),
-            SizedBox(
-              width: 80,
-              child: Text(
-                'Rp ${item.subtotal}',
-                textAlign: TextAlign.end,
-                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget buildPaymentSection(ThemeData theme, PosProvider pos) {
+  Widget buildPaymentSection(PosProvider pos) {
     final total = pos.totalCartPrice;
     final change = calculateChange(total);
 
@@ -257,20 +316,29 @@ class _CartScreenState extends State<CartScreen> {
           children: [
             const Text(
               'Total Tagihan',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               'Rp $total',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         SegmentedButton<String>(
+          style: SegmentedButton.styleFrom(
+            selectedBackgroundColor: AppColors.primary,
+            selectedForegroundColor: Colors.white,
+            backgroundColor: Colors.white,
+          ),
           segments: const [
             ButtonSegment(value: 'Tunai', label: Text('Tunai')),
             ButtonSegment(value: 'QRIS', label: Text('QRIS')),
@@ -288,9 +356,8 @@ class _CartScreenState extends State<CartScreen> {
             controller: cashController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
-              labelText: 'Uang Diterima',
+              labelText: 'Uang Diterima Kasir',
               prefixText: 'Rp ',
-              border: OutlineInputBorder(),
               isDense: true,
             ),
           ),
@@ -300,28 +367,43 @@ class _CartScreenState extends State<CartScreen> {
             child: Row(
               children: [
                 ActionChip(
-                  label: const Text('Uang Pas'),
+                  backgroundColor: AppColors.primaryContainer,
+                  side: const BorderSide(color: Color(0xFFDBEAFE)),
+                  label: const Text(
+                    'Uang Pas',
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
                   onPressed: () {
                     cashController.text = total.toString();
                   },
                 ),
                 const SizedBox(width: 6),
                 ActionChip(
-                  label: const Text('20.000'),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.border),
+                  label: const Text('20.000', style: TextStyle(fontSize: 12)),
                   onPressed: () {
                     cashController.text = '20000';
                   },
                 ),
                 const SizedBox(width: 6),
                 ActionChip(
-                  label: const Text('50.000'),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.border),
+                  label: const Text('50.000', style: TextStyle(fontSize: 12)),
                   onPressed: () {
                     cashController.text = '50000';
                   },
                 ),
                 const SizedBox(width: 6),
                 ActionChip(
-                  label: const Text('100.000'),
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.border),
+                  label: const Text('100.000', style: TextStyle(fontSize: 12)),
                   onPressed: () {
                     cashController.text = '100000';
                   },
@@ -329,14 +411,24 @@ class _CartScreenState extends State<CartScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Kembalian:'),
+              const Text(
+                'Kembalian:',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               Text(
                 'Rp $change',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ],
           ),
@@ -344,18 +436,22 @@ class _CartScreenState extends State<CartScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              border: Border.all(color: Colors.green.shade200),
+              color: AppColors.primaryContainer,
+              border: Border.all(color: const Color(0xFFDBEAFE)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Row(
               children: [
-                Icon(Icons.qr_code, color: Colors.green),
-                SizedBox(width: 8),
+                Icon(Icons.qr_code, color: AppColors.primary),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'QRIS Siap Di-scan Pelanggan (Nominal Otomatis)',
-                    style: TextStyle(fontSize: 13, color: Colors.green),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryDark,
+                    ),
                   ),
                 ),
               ],
@@ -366,7 +462,7 @@ class _CartScreenState extends State<CartScreen> {
         FilledButton.icon(
           onPressed: isProcessing ? null : () => handleCheckout(pos),
           style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            minimumSize: const Size(double.infinity, 48),
           ),
           icon: isProcessing
               ? const SizedBox(
@@ -377,9 +473,9 @@ class _CartScreenState extends State<CartScreen> {
                     color: Colors.white,
                   ),
                 )
-              : const Icon(Icons.check_circle_outline),
+              : const Icon(Icons.check_circle_outline, size: 18),
           label: Text(
-            isProcessing ? 'Memproses Transaksi...' : 'Proses Pembayaran',
+            isProcessing ? 'Memproses Transaksi...' : 'Selesaikan Transaksi',
           ),
         ),
       ],

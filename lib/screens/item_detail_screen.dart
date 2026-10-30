@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
+import '../theme/app_theme.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Product product;
@@ -47,7 +48,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final total = widget.product.price * quantity;
 
     return Scaffold(
@@ -59,146 +59,194 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           builder: (context, constraints) {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    height: constraints.maxHeight > 500 ? 180 : 120,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withAlpha(80),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        getCategoryIcon(widget.product.iconName),
-                        size: constraints.maxHeight > 500 ? 80 : 50,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Chip(
-                        label: Text(widget.product.category),
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      Text(
-                        'Rp ${widget.product.price}',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.product.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.product.description,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const Divider(height: 32),
-                  Text(
-                    'Jumlah Porsi',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      IconButton.filledTonal(
-                        onPressed: quantity > 1
-                            ? () {
-                                setState(() {
-                                  quantity--;
-                                });
-                              }
-                            : null,
-                        icon: const Icon(Icons.remove),
-                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 8,
-                        ),
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                        height: constraints.maxHeight > 500 ? 170 : 120,
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFDBEAFE)),
                         ),
-                        child: Text(
-                          '$quantity',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Icon(
+                            getCategoryIcon(widget.product.iconName),
+                            size: constraints.maxHeight > 500 ? 76 : 48,
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
-                      IconButton.filled(
-                        onPressed: () {
-                          setState(() {
-                            quantity++;
-                          });
-                        },
-                        icon: const Icon(Icons.add),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFFDBEAFE),
+                              ),
+                            ),
+                            child: Text(
+                              widget.product.category,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            'Rp ${widget.product.price}',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 10),
                       Text(
-                        'Subtotal: Rp $total',
-                        style: theme.textTheme.titleMedium?.copyWith(
+                        widget.product.name,
+                        style: const TextStyle(
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.product.description,
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Divider(color: AppColors.border),
+                      ),
+                      const Text(
+                        'Jumlah Porsi',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          IconButton.outlined(
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(44, 44),
+                              side: const BorderSide(color: AppColors.border),
+                            ),
+                            onPressed: quantity > 1
+                                ? () {
+                                    setState(() {
+                                      quantity--;
+                                    });
+                                  }
+                                : null,
+                            icon: const Icon(Icons.remove, size: 20),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 22,
+                              vertical: 10,
+                            ),
+                            margin: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: AppColors.border),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$quantity',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          IconButton.filled(
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              minimumSize: const Size(44, 44),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                quantity++;
+                              });
+                            },
+                            icon: const Icon(Icons.add,
+                                size: 20, color: Colors.white),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Rp $total',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Catatan Pesanan',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: notesController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          hintText:
+                              'Contoh: Jangan terlalu pedas, kuah dipisah...',
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: () {
+                          final item = CartItem(
+                            product: widget.product,
+                            quantity: quantity,
+                            notes: notesController.text.trim(),
+                          );
+                          Navigator.pop(context, item);
+                        },
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        icon: const Icon(Icons.add_shopping_cart, size: 18),
+                        label: Text('Tambahkan ke Keranjang (Rp $total)'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Catatan Pesanan',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: notesController,
-                    maxLines: 2,
-                    decoration: InputDecoration(
-                      hintText: 'Contoh: Jangan terlalu pedas, kuah dipisah...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: () {
-                      final item = CartItem(
-                        product: widget.product,
-                        quantity: quantity,
-                        notes: notesController.text.trim(),
-                      );
-                      Navigator.pop(context, item);
-                    },
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    icon: const Icon(Icons.shopping_cart_outlined),
-                    label: Text(
-                      'Tambah ke Keranjang (Rp $total)',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },

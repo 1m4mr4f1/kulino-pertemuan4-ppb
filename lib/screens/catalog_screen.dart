@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../providers/pos_provider.dart';
+import '../theme/app_theme.dart';
 import 'item_detail_screen.dart';
 import 'cart_screen.dart';
 import 'history_screen.dart';
@@ -48,7 +49,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${product.name} dimasukkan ke keranjang'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          content: Text('${product.name} ditambahkan'),
           duration: const Duration(seconds: 1),
         ),
       );
@@ -96,19 +99,33 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final pos = context.watch<PosProvider>();
     final filtered = getFilteredProducts(pos.products);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.storefront, size: 26),
-            SizedBox(width: 8),
-            Text(
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(
+                Icons.storefront,
+                size: 20,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
               'WarungPOS',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
             ),
           ],
         ),
@@ -120,7 +137,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           ),
           IconButton(
             tooltip: 'Riwayat Transaksi',
-            icon: const Icon(Icons.history),
+            icon: const Icon(Icons.receipt_long_outlined),
             onPressed: () {
               Navigator.push(
                 context,
@@ -136,45 +153,66 @@ class _CatalogScreenState extends State<CatalogScreen> {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: pos.isOffline
-                  ? Colors.amber.shade100
-                  : Colors.teal.shade50,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: pos.isOffline
+                    ? const Color(0xFFFFFBEB)
+                    : AppColors.primaryContainer,
+                border: Border(
+                  bottom: BorderSide(
+                    color: pos.isOffline
+                        ? const Color(0xFFFDE68A)
+                        : const Color(0xFFDBEAFE),
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
                   Icon(
                     pos.isOffline ? Icons.cloud_off : Icons.cloud_done,
                     size: 16,
                     color: pos.isOffline
-                        ? Colors.amber.shade900
-                        : Colors.teal.shade800,
+                        ? const Color(0xFFB45309)
+                        : AppColors.primary,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    pos.isOffline
-                        ? 'Mode Offline: Memakai data tersimpan di perangkat'
-                        : 'Mode Online: Terhubung dengan server REST API',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: pos.isOffline
-                          ? Colors.amber.shade900
-                          : Colors.teal.shade800,
+                  Expanded(
+                    child: Text(
+                      pos.isOffline
+                          ? 'Mode Offline: Memakai data tersimpan di perangkat'
+                          : 'Mode Online: Terhubung dengan server REST API',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: pos.isOffline
+                            ? const Color(0xFF92400E)
+                            : AppColors.primaryDark,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: TextField(
                 controller: searchController,
                 decoration: InputDecoration(
-                  hintText: 'Cari menu warung...',
-                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Cari menu makanan atau minuman...',
+                  hintStyle: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
                   suffixIcon: searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear),
+                          icon: const Icon(Icons.clear, size: 18),
                           onPressed: () {
                             searchController.clear();
                             setState(() {
@@ -184,9 +222,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         )
                       : null,
                   isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
                 ),
                 onChanged: (val) {
                   setState(() {
@@ -196,7 +231,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               ),
             ),
             SizedBox(
-              height: 48,
+              height: 42,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -208,6 +243,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   return ChoiceChip(
                     label: Text(cat),
                     selected: isSelected,
+                    selectedColor: AppColors.primary,
+                    backgroundColor: Colors.white,
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primary : AppColors.border,
+                    ),
+                    labelStyle: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                    ),
                     onSelected: (selected) {
                       if (selected) {
                         setState(() {
@@ -222,38 +267,60 @@ class _CatalogScreenState extends State<CatalogScreen> {
             const SizedBox(height: 8),
             Expanded(
               child: pos.isLoadingProducts
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.primary,
+                      ),
+                    )
                   : RefreshIndicator(
+                      color: AppColors.primary,
                       onRefresh: () => pos.loadProducts(forceRefresh: true),
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           int crossAxisCount = 2;
-                          double childAspectRatio = 0.82;
+                          double childAspectRatio = 0.74;
 
-                          if (constraints.maxWidth >= 960) {
+                          if (constraints.maxWidth >= 1024) {
                             crossAxisCount = 4;
-                            childAspectRatio = 0.9;
-                          } else if (constraints.maxWidth >= 600) {
+                            childAspectRatio = 0.82;
+                          } else if (constraints.maxWidth >= 640) {
                             crossAxisCount = 3;
-                            childAspectRatio = 0.85;
-                          } else {
-                            if (constraints.maxHeight < 450) {
-                              crossAxisCount = 3;
-                              childAspectRatio = 1.0;
-                            }
+                            childAspectRatio = 0.78;
+                          } else if (constraints.maxWidth <= 340) {
+                            crossAxisCount = 2;
+                            childAspectRatio = 0.68;
                           }
 
                           if (filtered.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                'Tidak ada menu yang sesuai kriteria.',
-                                style: TextStyle(color: Colors.grey),
-                              ),
+                            return ListView(
+                              children: [
+                                SizedBox(height: constraints.maxHeight * 0.3),
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.search_off,
+                                        size: 48,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        'Tidak ada menu yang cocok.',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             );
                           }
 
                           return GridView.builder(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: crossAxisCount,
@@ -264,13 +331,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             itemCount: filtered.length,
                             itemBuilder: (context, index) {
                               final product = filtered[index];
-                              return Card(
-                                clipBehavior: Clip.antiAlias,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: AppColors.border,
+                                    width: 1,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x060F172A),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                elevation: 2,
                                 child: InkWell(
+                                  borderRadius: BorderRadius.circular(14),
                                   onTap: () => openDetail(product),
                                   child: Column(
                                     crossAxisAlignment:
@@ -278,20 +356,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     children: [
                                       Expanded(
                                         child: Container(
-                                          color: theme
-                                              .colorScheme.primaryContainer
-                                              .withAlpha(50),
+                                          margin: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryContainer,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
                                           child: Center(
                                             child: Icon(
                                               getProductIcon(product.iconName),
-                                              size: 44,
-                                              color: theme.colorScheme.primary,
+                                              size: 40,
+                                              color: AppColors.primary,
                                             ),
                                           ),
                                         ),
                                       ),
                                       Padding(
-                                        padding: const EdgeInsets.all(10.0),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            12, 0, 12, 12),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -303,14 +385,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 14,
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
                                               product.category,
-                                              style: TextStyle(
+                                              style: const TextStyle(
                                                 fontSize: 11,
-                                                color: Colors.grey.shade600,
+                                                color: AppColors.textSecondary,
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -319,24 +402,38 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Text(
-                                                  'Rp ${product.price}',
-                                                  style: TextStyle(
-                                                    color: theme
-                                                        .colorScheme.primary,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 13,
+                                                Flexible(
+                                                  child: Text(
+                                                    'Rp ${product.price}',
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      color: AppColors.primary,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 13,
+                                                    ),
                                                   ),
                                                 ),
-                                                IconButton.filledTonal(
+                                                IconButton.filled(
                                                   iconSize: 18,
                                                   padding: EdgeInsets.zero,
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                    minWidth: 32,
-                                                    minHeight: 32,
+                                                  style:
+                                                      IconButton.styleFrom(
+                                                    backgroundColor:
+                                                        AppColors.primary,
+                                                    minimumSize:
+                                                        const Size(44, 44),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
                                                   ),
-                                                  icon: const Icon(Icons.add),
+                                                  icon: const Icon(Icons.add,
+                                                      color: Colors.white),
                                                   onPressed: () {
                                                     pos.addToCart(product);
                                                     ScaffoldMessenger.of(
@@ -346,8 +443,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                                             context)
                                                         .showSnackBar(
                                                       SnackBar(
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
                                                         content: Text(
-                                                          '${product.name} dimasukkan ke keranjang',
+                                                          '${product.name} ditambahkan',
                                                         ),
                                                         duration:
                                                             const Duration(
@@ -378,21 +484,47 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   horizontal: 16,
                   vertical: 12,
                 ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(color: AppColors.border, width: 1),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(25),
-                      blurRadius: 6,
-                      offset: const Offset(0, -2),
+                      color: Color(0x0A0F172A),
+                      blurRadius: 10,
+                      offset: Offset(0, -3),
                     ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    Badge(
-                      label: Text('${pos.totalCartCount}'),
-                      child: const Icon(Icons.shopping_basket),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFDBEAFE)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 18,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${pos.totalCartCount}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Column(
@@ -401,13 +533,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       children: [
                         const Text(
                           'Total Pesanan',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         Text(
                           'Rp ${pos.totalCartPrice}',
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
@@ -415,7 +551,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     const Spacer(),
                     FilledButton.icon(
                       onPressed: openCart,
-                      icon: const Icon(Icons.arrow_forward),
+                      icon: const Icon(Icons.arrow_forward, size: 18),
                       label: const Text('Buka Keranjang'),
                     ),
                   ],

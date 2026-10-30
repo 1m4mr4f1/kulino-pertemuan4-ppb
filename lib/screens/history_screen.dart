@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/pos_provider.dart';
+import '../theme/app_theme.dart';
 import 'receipt_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Hapus Semua Riwayat?'),
         content: const Text(
           'Seluruh data rekaman transaksi yang tersimpan di perangkat akan dihapus secara permanen.',
@@ -33,6 +35,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: const Text('Batal'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Hapus'),
           ),
@@ -57,28 +62,52 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (transactions.isNotEmpty)
             IconButton(
               tooltip: 'Hapus Riwayat',
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Icons.delete_outline, size: 20),
               onPressed: () => clearHistory(pos),
             ),
         ],
       ),
       body: SafeArea(
         child: pos.isLoadingTransactions
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppColors.primary,
+                ),
+              )
             : transactions.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 70,
-                          color: Colors.grey.shade400,
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.receipt_long_outlined,
+                            size: 48,
+                            color: AppColors.primary,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Belum ada transaksi tersimpan',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          'Belum Ada Riwayat Transaksi',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Transaksi yang selesai akan tercatat di sini.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -87,50 +116,71 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: transactions.length,
                     separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final trx =
                           transactions[transactions.length - 1 - index];
                       final date =
                           '${trx.timestamp.day.toString().padLeft(2, '0')}/${trx.timestamp.month.toString().padLeft(2, '0')} ${trx.timestamp.hour.toString().padLeft(2, '0')}:${trx.timestamp.minute.toString().padLeft(2, '0')}';
 
-                      return Card(
-                        elevation: 1.5,
-                        shape: RoundedRectangleBorder(
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x060F172A),
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.teal.shade50,
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             child: Icon(
                               trx.paymentMethod == 'QRIS'
                                   ? Icons.qr_code
-                                  : Icons.money,
-                              color: Colors.teal.shade700,
+                                  : Icons.payments_outlined,
+                              color: AppColors.primary,
+                              size: 22,
                             ),
                           ),
                           title: Row(
                             children: [
                               Text(
                                 trx.id,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                               if (trx.latitude != null) ...[
                                 const SizedBox(width: 6),
                                 const Icon(
                                   Icons.location_on,
-                                  size: 16,
-                                  color: Colors.red,
+                                  size: 15,
+                                  color: AppColors.primary,
                                 ),
                               ],
                             ],
                           ),
                           subtitle: Text(
                             '$date • ${trx.items.length} item • ${trx.paymentMethod}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                           trailing: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -139,12 +189,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               Text(
                                 'Rp ${trx.totalAmount}',
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: Colors.teal,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: AppColors.primary,
                                 ),
                               ),
-                              const Icon(Icons.chevron_right, size: 18),
+                              const Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
                             ],
                           ),
                           onTap: () {

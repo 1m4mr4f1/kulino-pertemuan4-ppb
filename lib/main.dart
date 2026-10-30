@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/pos_provider.dart';
+import 'theme/app_theme.dart';
 import 'screens/catalog_screen.dart';
 
 void main() {
@@ -20,17 +21,7 @@ class WarungPosApp extends StatelessWidget {
     return MaterialApp(
       title: 'WarungPOS',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00796B),
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: const CatalogScreen(),
     );
   }
